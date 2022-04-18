@@ -1,0 +1,39 @@
+steps:
+- name: 'gcr.io/cloud-builders/gcloud'
+  entrypoint: 'echo'
+  args: ["-e", "const APIKEY = \'AIzaSyCwg0jnJmuD2OxUbZESFr26UGG9FvqQs6Q\';\nconst AUTH_DOMAIN = \'csp-blog-65076.firebaseapp.com\';\nconst PROJECT_ID = \'csp-blog\';\nconst STORAGE_BUCKET = \'csp-blog.appspot.com\';\nconst MESSAGING_SENDER_ID = \'987752825497\';\nconst APP_ID = \'1:987752825497:web:3188768a3b270e42896e08\';\nconst USE_EMULATOR = false;", ">", "lib/config.dart"]
+  id: A
+
+- name: 'gcr.io/cloud-builders/docker'
+  args: ['run', '--rm', '-it', '-v', '${PWD}:/build', '--workdir', '/build', 'cirrusci/flutter:2.10.2', '/bin/bash', '-c', "'flutter clean && flutter build web --base-href / && exit'"]
+  id: B
+  waitFor:
+  - A
+
+- name: 'gcr.io/cloud-builders/gcloud'
+  entrypoint: 'gsutil'
+  args: ['cp', '-r', 'gs://csp-blog.sheiyuray.online/web/', 'gs://csp-blog.sheiyuray.online/web-blue/']
+  id: C
+  waitFor:
+  - B
+
+- name: 'gcr.io/cloud-builders/gcloud'
+  entrypoint: 'gsutil'
+  args: ['rm', '-r', 'gs://csp-blog.sheiyuray.online/web/', ]
+  id: D
+  waitFor:
+  - C
+
+- name: 'gcr.io/cloud-builders/gcloud'
+  entrypoint: 'gsutil'
+  args: ['cp', '-r', 'build/web/**', 'gs://csp-blog.sheiyuray.online/']
+  id: E
+  waitFor:
+  - D
+
+- name: 'gcr.io/cloud-builders/gcloud'
+  entrypoint: 'gsutil'
+  args: ['cp', '-r', 'build/web/', 'gs://csp-blog.sheiyuray.online/']
+  id: F
+  waitFor:
+  - E
